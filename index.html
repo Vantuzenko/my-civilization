@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Эпохи Народов: Стратегия Реального Времени</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --panel: #161b22;
+            --accent: #58a6ff;
+            --gold: #d29922;
+            --war: #f85149;
+            --success: #3fb950;
+            --text: #c9d1d9;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Экраны */
+        .hidden { display: none !important; }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Верхняя панель статистики */
+        .header-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label { font-size: 14px; color: #8b949e; display: block; }
+        .stat-value { font-size: 24px; font-weight: bold; color: var(--accent); }
+
+        /* Карта влияния */
+        .map-bar {
+            height: 12px;
+            background: #30363d;
+            border-radius: 6px;
+            display: flex;
+            overflow: hidden;
+            margin: 20px 0;
+            border: 1px solid #444;
+        }
+        .map-part { height: 100%; transition: width 0.8s ease-in-out; }
+
+        /* Игровой процесс */
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) {
+            .game-grid { grid-template-columns: 1fr; }
+        }
+
+        h3 { margin-top: 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+
+        /* Кнопки действий */
+        .actions-section { display: flex; flex-direction: column; gap: 15px; }
+        
+        .action-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            background: #21262d;
+            color: var(--text);
+            border: 1px solid #30363d;
+            padding: 12px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        
+        .btn-upgrade { background: #388bfd; color: white; border: none; font-weight: bold; }
+        .btn-upgrade:hover:not(:disabled) { background: #58a6ff; }
+        
+        .btn-nuke { 
+            background: #da3633; color: white; border: none; font-weight: bold; 
+            grid-column: span 2; justify-content: center; font-size: 18px;
+        }
+        .btn-nuke:hover:not(:disabled) { background: #f85149; }
+
+        .price { font-weight: bold; color: var(--gold); }
+
+        /* Журнал и враги */
+        .log {
+            background: #010409;
+            height: 250px;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            border: 1px solid #30363d;
+        }
+
+        .enemy-card {
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 1px solid #30363d;
+        }
+
+        .attack-btn {
+            width: auto; padding: 5px 10px; font-size: 12px; background: var(--war); border: none; color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div id="setup-screen" class="container" style="text-align: center; padding-top: 100px;">
+    <div class="card">
+        <h1>🌍 Эпохи Народов 3.5</h1>
+        <p>Ваш прогресс сохраняется автоматически. Выберите нацию:</p>
+        <div style="display: grid; gap: 10px; max-width: 400px; margin: 0 auto;">
+            <button onclick="startGame('Нордланд')">🌲 Нордланд (Бонус к армии) <span>→</span></button>
+            <button onclick="startGame('Солария')">🌾 Солария (Бонус к золоту) <span>→</span></button>
+            <button onclick="startGame('Акватория')">🌊 Акватория (Быстрая наука) <span>→</span></button>
+        </div>
+    </div>
+</div>
+
+<div id="game-screen" class="container hidden">
+    <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+        <div><b>Страна:</b> <span id="p-name" style="color:var(--accent)">-</span></div>
+        <div><b>Текущая Эпоха:</b> <span id="p-epoch-name" style="font-weight: bold;">-</span></div>
+        <button onclick="resetGame()" style="width: auto; padding: 5px 10px; font-size: 12px;">Сбросить игру</button>
+    </div>
+
+    <div class="header-stats">
+        <div class="card stat-item">
+            <span class="stat-label">Золото (ОР)</span>
+            <span class="stat-value" id="p-or" style="color:var(--gold)">0</span>
+            <small id="p-income" style="color:var(--success)">+0/сек</small>
+        </div>
+        <div class="card stat-item">
+            <span class="stat-label">Мощь армии</span>
+            <span class="stat-value" id="p-mil" style="color:var(--war)">0</span>
+            <small id="p-mil-bonus">x1.0 сила</small>
+        </div>
+        <div class="card stat-item">
+            <span class="stat-label">Время правления</span>
+            <span class="stat-value" id="timer">00:00</span>
+        </div>
+    </div>
+
+    <div class="map-bar" title="Мировое влияние (на основе силы армии)">
+        <div id="m-p" class="map-part" style="background:var(--accent)"></div>
+        <div id="m-ai0" class="map-part" style="background:#f0883e"></div>
+        <div id="m-ai1" class="map-part" style="background:#3fb950"></div>
+    </div>
+
+    <div class="game-grid">
+        <div class="actions-section">
+            <div class="card">
+                <h3>🏛 Экономика и Наука</h3>
+                <div class="action-row">
+                    <button onclick="buy('build')">Строить здание <span class="price" id="cost-build">0</span></button>
+                    <button class="btn-upgrade" onclick="buy('up')">ЭВОЛЮЦИЯ <span class="price" id="cost-up">0</span></button>
+                    <button id="nuke-btn" class="btn-nuke hidden" onclick="launchNuke()">🚀 ЯДЕРНЫЙ УДАР (10 000 ОР)</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>⚔ Военный штаб</h3>
+                <div class="action-row">
+                    <button onclick="buy('inf')"><span id="name-inf">Пехота</span> <span class="price" id="cost-inf">0</span></button>
+                    <button onclick="buy('arc')"><span id="name-arc">Стрелки</span> <span class="price" id="cost-arc">0</span></button>
+                    <button onclick="buy('cav')"><span id="name-cav">Кавалерия</span> <span class="price" id="cost-cav">0</span></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="card">
+                <h3>🌍 Соседи</h3>
+                <div id="enemies-list"></div>
+            </div>
+            <div class="card">
+                <h3>📜 События</h3>
+                <div id="log" class="log"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Конфигурация эпох
+const DATA = {
+    epochs: [
+        { name: "Каменный век", mult: 1, inf: "Дубинщик", arc: "Пращник", cav: "Всадник", p: [5, 15, 40] },
+        { name: "Античность", mult: 4, inf: "Гоплит", arc: "Лучник", cav: "Колесница", p: [5, 15, 40] },
+        { name: "Средневековье", mult: 15, inf: "Мечник", arc: "Арбалетчик", cav: "Рыцарь", p: [5, 15, 40] },
+        { name: "Индустрия", mult: 50, inf: "Стрелок", arc: "Мушкетер", cav: "Гусар", p: [5, 15, 40] },
+        { name: "Современность", mult: 150, inf: "Спецназ", arc: "Снайпер", cav: "Танк", p: [5, 15, 40] }
+    ],
+    basePrices: { build: 20, inf: 15, arc: 35, cav: 80, up: 150 }
+};
+
+let state = {
+    p: { name: "", or: 50, inc: 2, mil: 0, ep: 0 },
+    ai: [],
+    time: 0
+};
+
+// Инициализация игры
+function startGame(faction) {
+    const saved = localStorage.getItem('civ_rts_save_v1');
+    if (saved) {
+        state = JSON.parse(saved);
+    } else {
+        state.p.name = faction;
+        if(faction === 'Солария') state.p.inc = 5;
+        if(faction === 'Нордланд') state.p.mil = 30;
+        
+        const others = ["Нордланд", "Солария", "Акватория"].filter(n => n !== faction);
+        state.ai = others.map(n => ({
+            name: n, or: 50, inc: 2, mil: 10, ep: 0
+        }));
+    }
+
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
+    
+    // Запуск таймеров
+    setInterval(tick, 1000);
+    setInterval(() => localStorage.setItem('civ_rts_save_v1', JSON.stringify(state)), 5000);
+    render();
+}
+
+// Каждую секунду
+function tick() {
+    state.time++;
+    let m = DATA.epochs[state.p.ep].mult;
+    
+    // Доход игрока
+    state.p.or += (state.p.inc * m);
+    
+    // Логика ИИ
+    state.ai.forEach(ai => {
+        let am = DATA.epochs[ai.ep].mult;
+        ai.or += (ai.inc * am);
+        
+        // Решения ИИ
+        if (ai.or >= 50 * am) {
+            if (Math.random() > 0.5) ai.inc += 2;
+            else ai.mil += (20 * am);
+            ai.or -= (40 * am);
+        }
+        
+        // Эволюция ИИ
+        let upCost = DATA.basePrices.up * Math.pow(7, ai.ep);
+        if (ai.or >= upCost && ai.ep < 4) {
+            ai.or -= upCost;
+            ai.ep++;
+            addLog(`🌏 ${ai.name} перешли в эпоху ${DATA.epochs[ai.ep].name}`, '#58a6ff');
+        }
+    });
+
+    render();
+}
+
+function buy(type) {
+    let m = DATA.epochs[state.p.ep].mult;
+    let upCost = DATA.basePrices.up * Math.pow(7, state.p.ep);
+    if(state.p.name === 'Акватория') upCost *= 0.8; // Бонус Акватории
+
+    if (type === 'build') {
+        let cost = DATA.basePrices.build * m;
+        if (state.p.or >= cost) {
+            state.p.or -= cost;
+            state.p.inc += 2;
+            addLog("Построено здание. Доход вырос.");
+        }
+    } else if (type === 'up') {
+        if (state.p.or >= upCost && state.p.ep < 4) {
+            state.p.or -= upCost;
+            state.p.ep++;
+            addLog(`🚀 ВЫ ПЕРЕШЛИ В ЭПОХУ: ${DATA.epochs[state.p.ep].name.toUpperCase()}!`, '#3fb950');
+        }
+    } else if (['inf', 'arc', 'cav'].includes(type)) {
+        let cost = DATA.basePrices[type] * m;
+        if (state.p.or >= cost) {
+            state.p.or -= cost;
+            let idx = type === 'inf' ? 0 : (type === 'arc' ? 1 : 2);
+            let power = DATA.epochs[state.p.ep].p[idx] * m;
+            state.p.mil += power;
+            addLog(`Нанят отряд: ${DATA.epochs[state.p.ep][type]} (+${power} силы)`);
+        }
+    }
+    render();
+}
+
+function launchNuke() {
+    if (state.p.or >= 10000) {
+        state.p.or -= 10000;
+        addLog("🚀 РАКЕТНЫЙ УДАР НАНЕСЕН! Экономика врагов разрушена!", "#f85149");
+        state.ai.forEach(ai => {
+            ai.inc = Math.max(1, Math.floor(ai.inc * 0.5));
+            ai.or = Math.floor(ai.or * 0.5);
+            ai.mil = Math.floor(ai.mil * 0.7);
+        });
+    }
+}
+
+function attack(idx) {
+    let target = state.ai[idx];
+    addLog(`⚔ Нападение на ${target.name}...`);
+    
+    if (state.p.mil > target.mil) {
+        let loot = Math.floor(target.or * 0.6);
+        state.p.or += loot;
+        target.or -= loot;
+        target.mil = Math.floor(target.mil * 0.3);
+        addLog(`🏆 Победа! Захвачено ${loot} золота. Армия врага разбита.`, "#3fb950");
+    } else {
+        state.p.mil = Math.floor(state.p.mil * 0.2);
+        addLog(`❌ Поражение! Ваша армия уничтожена при штурме.`, "#f85149");
+    }
+    render();
+}
+
+function render() {
+    let ep = DATA.epochs[state.p.ep];
+    let m = ep.mult;
+
+    // Тексты
+    document.getElementById('p-name').innerText = state.p.name;
+    document.getElementById('p-epoch-name').innerText = ep.name;
+    document.getElementById('p-or').innerText = Math.floor(state.p.or);
+    document.getElementById('p-income').innerText = `+${state.p.inc * m}/сек`;
+    document.getElementById('p-mil').innerText = Math.floor(state.p.mil);
+    document.getElementById('p-mil-bonus').innerText = `x${m.toFixed(1)} мощь эпохи`;
+
+    // Цены и названия
+    document.getElementById('cost-build').innerText = DATA.basePrices.build * m;
+    document.getElementById('cost-up').innerText = state.p.ep < 4 ? Math.floor(DATA.basePrices.up * Math.pow(7, state.p.ep) * (state.p.name === 'Акватория' ? 0.8 : 1)) : "МАКС";
+    document.getElementById('cost-inf').innerText = DATA.basePrices.inf * m;
+    document.getElementById('cost-arc').innerText = DATA.basePrices.arc * m;
+    document.getElementById('cost-cav').innerText = DATA.basePrices.cav * m;
+
+    document.getElementById('name-inf').innerText = ep.inf;
+    document.getElementById('name-arc').innerText = ep.arc;
+    document.getElementById('name-cav').innerText = ep.cav;
+
+    // Таймер
+    let mins = Math.floor(state.time / 60);
+    let secs = state.time % 60;
+    document.getElementById('timer').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+    // Ядерка
+    if (state.p.ep === 4) document.getElementById('nuke-btn').classList.remove('hidden');
+
+    // Карта
+    let totalPower = state.p.mil + state.ai[0].mil + state.ai[1].mil + 1;
+    document.getElementById('m-p').style.width = (state.p.mil / totalPower * 100) + "%";
+    document.getElementById('m-ai0').style.width = (state.ai[0].mil / totalPower * 100) + "%";
+    document.getElementById('m-ai1').style.width = (state.ai[1].mil / totalPower * 100) + "%";
+
+    // Список врагов
+    let aiHtml = "";
+    state.ai.forEach((ai, i) => {
+        aiHtml += `
+            <div class="enemy-card">
+                <div style="display:flex; justify-content:space-between">
+                    <b>${ai.name}</b>
+                    <small>${DATA.epochs[ai.ep].name}</small>
+                </div>
+                <div style="font-size:12px; margin: 5px 0;">Сила: ${Math.floor(ai.mil)} | Казна: ${Math.floor(ai.or)}</div>
+                <button class="attack-btn" onclick="attack(${i})">АТАКОВАТЬ</button>
+            </div>
+        `;
+    });
+    document.getElementById('enemies-list').innerHTML = aiHtml;
+}
+
+function addLog(msg, color = "#c9d1d9") {
+    const log = document.getElementById('log');
+    const entry = document.createElement('div');
+    entry.style.color = color;
+    entry.style.marginBottom = "5px";
+    entry.innerHTML = `<span style="color:#6e7681">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+    log.prepend(entry);
+}
+
+function resetGame() {
+    if (confirm("Вы уверены, что хотите начать заново? Весь прогресс будет удален.")) {
+        localStorage.removeItem('civ_rts_save_v1');
+        location.reload();
+    }
+}
+</script>
+
+</body>
+</html>
