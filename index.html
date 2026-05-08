@@ -3,430 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Эпохи Народов: Стратегия Реального Времени</title>
+    <title>Эпохи Народов 4.0: Экспансия</title>
     <style>
-        :root {
-            --bg: #0d1117;
-            --panel: #161b22;
-            --accent: #58a6ff;
-            --gold: #d29922;
-            --war: #f85149;
-            --success: #3fb950;
-            --text: #c9d1d9;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1100px;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        /* Экраны */
-        .hidden { display: none !important; }
-
-        .card {
-            background: var(--panel);
-            border: 1px solid #30363d;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        /* Верхняя панель статистики */
-        .header-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-label { font-size: 14px; color: #8b949e; display: block; }
-        .stat-value { font-size: 24px; font-weight: bold; color: var(--accent); }
-
-        /* Карта влияния */
-        .map-bar {
-            height: 12px;
-            background: #30363d;
-            border-radius: 6px;
-            display: flex;
-            overflow: hidden;
-            margin: 20px 0;
-            border: 1px solid #444;
-        }
-        .map-part { height: 100%; transition: width 0.8s ease-in-out; }
-
-        /* Игровой процесс */
-        .game-grid {
-            display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 20px;
-        }
-
-        @media (max-width: 850px) {
-            .game-grid { grid-template-columns: 1fr; }
-        }
-
-        h3 { margin-top: 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
-
-        /* Кнопки действий */
-        .actions-section { display: flex; flex-direction: column; gap: 15px; }
+        :root { --bg: #0b0e14; --panel: #1a1f26; --accent: #4a9eff; --gold: #f1c40f; --war: #e74c3c; --neutral: #95a5a6; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: #ecf0f1; margin: 0; padding: 10px; display: flex; justify-content: center; }
+        .wrapper { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 350px; gap: 15px; }
         
-        .action-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        button {
-            background: #21262d;
-            color: var(--text);
-            border: 1px solid #30363d;
-            padding: 12px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 15px;
-            transition: 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        button:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .card { background: var(--panel); border: 1px solid #34495e; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .header { grid-column: span 2; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
         
-        .btn-upgrade { background: #388bfd; color: white; border: none; font-weight: bold; }
-        .btn-upgrade:hover:not(:disabled) { background: #58a6ff; }
+        /* КАРТА */
+        .map { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .region { background: #2c3e50; border: 2px solid #34495e; border-radius: 6px; padding: 10px; min-height: 120px; position: relative; transition: 0.3s; cursor: pointer; }
+        .region.active { border-color: var(--accent); background: #34495e; }
+        .region.enemy { border-color: var(--war); }
+        .region-name { font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px; color: var(--accent); }
+        .unit-here { position: absolute; bottom: 5px; right: 5px; font-size: 20px; animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% {transform: translateY(0);} 50% {transform: translateY(-5px);} }
         
-        .btn-nuke { 
-            background: #da3633; color: white; border: none; font-weight: bold; 
-            grid-column: span 2; justify-content: center; font-size: 18px;
-        }
-        .btn-nuke:hover:not(:disabled) { background: #f85149; }
+        /* СТАТИСТИКА */
+        .stat-val { font-size: 20px; font-weight: bold; color: var(--gold); }
+        .progress-bar { background: #111; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 5px; }
+        .progress-fill { background: var(--accent); height: 100%; width: 0%; transition: width 0.1s linear; }
 
-        .price { font-weight: bold; color: var(--gold); }
+        /* КНОПКИ */
+        button { background: #2c3e50; color: white; border: 1px solid #7f8c8d; padding: 10px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 5px; transition: 0.2s; }
+        button:hover:not(:disabled) { background: #3e5871; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-buy { border-left: 4px solid var(--gold); }
+        .btn-move { background: var(--accent); border: none; font-weight: bold; }
+        .btn-war { background: var(--war); border: none; font-weight: bold; }
 
-        /* Журнал и враги */
-        .log {
-            background: #010409;
-            height: 250px;
-            overflow-y: auto;
-            padding: 10px;
-            border-radius: 8px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 13px;
-            border: 1px solid #30363d;
-        }
+        .buildings-grid { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+        .b-icon { width: 15px; height: 15px; background: var(--gold); border-radius: 2px; }
 
-        .enemy-card {
-            background: #0d1117;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            border: 1px solid #30363d;
-        }
-
-        .attack-btn {
-            width: auto; padding: 5px 10px; font-size: 12px; background: var(--war); border: none; color: white;
-        }
+        .log { background: #000; height: 300px; overflow-y: auto; padding: 10px; font-family: monospace; font-size: 12px; border-radius: 4px; border: 1px solid #333; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div id="setup-screen" class="container" style="text-align: center; padding-top: 100px;">
-    <div class="card">
-        <h1>🌍 Эпохи Народов 3.5</h1>
-        <p>Ваш прогресс сохраняется автоматически. Выберите нацию:</p>
-        <div style="display: grid; gap: 10px; max-width: 400px; margin: 0 auto;">
-            <button onclick="startGame('Нордланд')">🌲 Нордланд (Бонус к армии) <span>→</span></button>
-            <button onclick="startGame('Солария')">🌾 Солария (Бонус к золоту) <span>→</span></button>
-            <button onclick="startGame('Акватория')">🌊 Акватория (Быстрая наука) <span>→</span></button>
-        </div>
-    </div>
+<div id="setup" class="card" style="margin-top: 100px; text-align: center;">
+    <h1>🇷🇺 Эпохи Народов: Границы 🇺🇸</h1>
+    <p>Выберите фракцию для начала глобальной экспансии:</p>
+    <button onclick="init('Россия')">🇷🇺 Россия (Сильные танки)</button>
+    <button onclick="init('США')">🇺🇸 США (Мощная авиация/доход)</button>
 </div>
 
-<div id="game-screen" class="container hidden">
-    <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
-        <div><b>Страна:</b> <span id="p-name" style="color:var(--accent)">-</span></div>
-        <div><b>Текущая Эпоха:</b> <span id="p-epoch-name" style="font-weight: bold;">-</span></div>
-        <button onclick="resetGame()" style="width: auto; padding: 5px 10px; font-size: 12px;">Сбросить игру</button>
+<div id="game" class="wrapper hidden">
+    <div class="header card">
+        <div>Фракция: <b id="p-faction">-</b> | Эпоха: <b id="p-epoch">-</b></div>
+        <div id="move-status" style="color:var(--accent); font-weight:bold;">Командуйте войсками!</div>
+        <div class="stat-val">💰 <span id="p-or">0</span> <small style="font-size:12px; color:#aaa;">(+<span id="p-inc">0</span>/с)</small></div>
     </div>
 
-    <div class="header-stats">
-        <div class="card stat-item">
-            <span class="stat-label">Золото (ОР)</span>
-            <span class="stat-value" id="p-or" style="color:var(--gold)">0</span>
-            <small id="p-income" style="color:var(--success)">+0/сек</small>
-        </div>
-        <div class="card stat-item">
-            <span class="stat-label">Мощь армии</span>
-            <span class="stat-value" id="p-mil" style="color:var(--war)">0</span>
-            <small id="p-mil-bonus">x1.0 сила</small>
-        </div>
-        <div class="card stat-item">
-            <span class="stat-label">Время правления</span>
-            <span class="stat-value" id="timer">00:00</span>
-        </div>
-    </div>
+    <main>
+        <h3>Карта Мира (Америка + Россия)</h3>
+        <div class="map" id="world-map">
+            </div>
 
-    <div class="map-bar" title="Мировое влияние (на основе силы армии)">
-        <div id="m-p" class="map-part" style="background:var(--accent)"></div>
-        <div id="m-ai0" class="map-part" style="background:#f0883e"></div>
-        <div id="m-ai1" class="map-part" style="background:#3fb950"></div>
-    </div>
-
-    <div class="game-grid">
-        <div class="actions-section">
-            <div class="card">
-                <h3>🏛 Экономика и Наука</h3>
-                <div class="action-row">
-                    <button onclick="buy('build')">Строить здание <span class="price" id="cost-build">0</span></button>
-                    <button class="btn-upgrade" onclick="buy('up')">ЭВОЛЮЦИЯ <span class="price" id="cost-up">0</span></button>
-                    <button id="nuke-btn" class="btn-nuke hidden" onclick="launchNuke()">🚀 ЯДЕРНЫЙ УДАР (10 000 ОР)</button>
+        <div class="card">
+            <h3 id="current-region-title">Выберите регион на карте</h3>
+            <div id="region-actions" class="hidden">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <p><b>Строительство:</b></p>
+                        <button class="btn-buy" id="btn-build" onclick="build()">Построить Ферму/Завод (<span id="c-build">50</span> ОР)</button>
+                        <button class="btn-buy" id="btn-up" onclick="upgradeEpoch()">ЭВОЛЮЦИЯ (<span id="c-up">500</span> ОР)</button>
+                    </div>
+                    <div>
+                        <p><b>Армия:</b></p>
+                        <button class="btn-buy" onclick="recruit()">Нанять отряд (<span id="c-mil">30</span> ОР)</button>
+                        <button class="btn-war" id="btn-attack" onclick="attackRegion()">❌ ШТУРМ РЕГИОНА</button>
+                    </div>
                 </div>
             </div>
-
-            <div class="card">
-                <h3>⚔ Военный штаб</h3>
-                <div class="action-row">
-                    <button onclick="buy('inf')"><span id="name-inf">Пехота</span> <span class="price" id="cost-inf">0</span></button>
-                    <button onclick="buy('arc')"><span id="name-arc">Стрелки</span> <span class="price" id="cost-arc">0</span></button>
-                    <button onclick="buy('cav')"><span id="name-cav">Кавалерия</span> <span class="price" id="cost-cav">0</span></button>
-                </div>
+            <div id="move-overlay" class="hidden">
+                <p>Переброска войск...</p>
+                <div class="progress-bar"><div id="move-progress" class="progress-fill"></div></div>
             </div>
         </div>
+    </main>
 
-        <div class="sidebar">
-            <div class="card">
-                <h3>🌍 Соседи</h3>
-                <div id="enemies-list"></div>
-            </div>
-            <div class="card">
-                <h3>📜 События</h3>
-                <div id="log" class="log"></div>
-            </div>
+    <aside>
+        <div class="card">
+            <h3>Ваша мощь: <span id="p-mil" style="color:var(--war)">0</span></h3>
+            <p><small>Армия потребляет часть дохода на содержание.</small></p>
         </div>
-    </div>
+        <div class="card">
+            <h3>Журнал событий</h3>
+            <div id="log" class="log"></div>
+        </div>
+        <button onclick="resetGame()" style="background:#444; font-size:10px;">Сбросить прогресс</button>
+    </aside>
 </div>
 
 <script>
-// Конфигурация эпох
-const DATA = {
-    epochs: [
-        { name: "Каменный век", mult: 1, inf: "Дубинщик", arc: "Пращник", cav: "Всадник", p: [5, 15, 40] },
-        { name: "Античность", mult: 4, inf: "Гоплит", arc: "Лучник", cav: "Колесница", p: [5, 15, 40] },
-        { name: "Средневековье", mult: 15, inf: "Мечник", arc: "Арбалетчик", cav: "Рыцарь", p: [5, 15, 40] },
-        { name: "Индустрия", mult: 50, inf: "Стрелок", arc: "Мушкетер", cav: "Гусар", p: [5, 15, 40] },
-        { name: "Современность", mult: 150, inf: "Спецназ", arc: "Снайпер", cav: "Танк", p: [5, 15, 40] }
-    ],
-    basePrices: { build: 20, inf: 15, arc: 35, cav: 80, up: 150 }
-};
+const REGIONS = [
+    { id: 0, name: "Москва (РФ)", owner: "Россия", buildings: 1, side: "RU" },
+    { id: 1, name: "Сибирь (РФ)", owner: "Россия", buildings: 0, side: "RU" },
+    { id: 2, name: "Дальний Восток (РФ)", owner: "Россия", buildings: 0, side: "RU" },
+    { id: 3, name: "Берингов пролив", owner: "Нейтрал", buildings: 0, side: "Neutral" },
+    { id: 4, name: "Аляска (США)", owner: "США", buildings: 0, side: "US" },
+    { id: 5, name: "Центральные штаты", owner: "США", buildings: 0, side: "US" },
+    { id: 6, name: "Вашингтон (США)", owner: "США", buildings: 1, side: "US" }
+];
+
+const EPOCHS = ["Каменный век", "Античность", "Средневековье", "Промышленность", "Современность"];
 
 let state = {
-    p: { name: "", or: 50, inc: 2, mil: 0, ep: 0 },
-    ai: [],
-    time: 0
+    p: { faction: "", or: 100, mil: 0, ep: 0, loc: 0 },
+    ai: { faction: "", or: 100, mil: 20, ep: 0, loc: 6 },
+    regions: JSON.parse(JSON.stringify(REGIONS)),
+    moving: false
 };
 
-// Инициализация игры
-function startGame(faction) {
-    const saved = localStorage.getItem('civ_rts_save_v1');
-    if (saved) {
-        state = JSON.parse(saved);
-    } else {
-        state.p.name = faction;
-        if(faction === 'Солария') state.p.inc = 5;
-        if(faction === 'Нордланд') state.p.mil = 30;
-        
-        const others = ["Нордланд", "Солария", "Акватория"].filter(n => n !== faction);
-        state.ai = others.map(n => ({
-            name: n, or: 50, inc: 2, mil: 10, ep: 0
-        }));
-    }
-
-    document.getElementById('setup-screen').classList.add('hidden');
-    document.getElementById('game-screen').classList.remove('hidden');
+function init(faction) {
+    state.p.faction = faction;
+    state.ai.faction = faction === "Россия" ? "США" : "Россия";
+    state.p.loc = faction === "Россия" ? 0 : 6;
+    state.ai.loc = faction === "Россия" ? 6 : 0;
     
-    // Запуск таймеров
+    document.getElementById('setup').classList.add('hidden');
+    document.getElementById('game').classList.remove('hidden');
+    document.getElementById('p-faction').innerText = faction;
+    
     setInterval(tick, 1000);
-    setInterval(() => localStorage.setItem('civ_rts_save_v1', JSON.stringify(state)), 5000);
     render();
+    addLog(`Добро пожаловать, правитель ${faction}! Начните экспансию.`);
 }
 
-// Каждую секунду
 function tick() {
-    state.time++;
-    let m = DATA.epochs[state.p.ep].mult;
-    
-    // Доход игрока
-    state.p.or += (state.p.inc * m);
-    
-    // Логика ИИ
-    state.ai.forEach(ai => {
-        let am = DATA.epochs[ai.ep].mult;
-        ai.or += (ai.inc * am);
-        
-        // Решения ИИ
-        if (ai.or >= 50 * am) {
-            if (Math.random() > 0.5) ai.inc += 2;
-            else ai.mil += (20 * am);
-            ai.or -= (40 * am);
-        }
-        
-        // Эволюция ИИ
-        let upCost = DATA.basePrices.up * Math.pow(7, ai.ep);
-        if (ai.or >= upCost && ai.ep < 4) {
-            ai.or -= upCost;
-            ai.ep++;
-            addLog(`🌏 ${ai.name} перешли в эпоху ${DATA.epochs[ai.ep].name}`, '#58a6ff');
+    if (state.moving) return;
+
+    // ЭКОНОМИКА (Исправлено: замедлена)
+    let totalIncome = 0;
+    state.regions.forEach(r => {
+        if(r.owner === state.p.faction) {
+            // Каждое здание приносит доход, зависящий от эпохи
+            totalIncome += r.buildings * (state.p.ep + 1) * 2;
         }
     });
-
-    render();
-}
-
-function buy(type) {
-    let m = DATA.epochs[state.p.ep].mult;
-    let upCost = DATA.basePrices.up * Math.pow(7, state.p.ep);
-    if(state.p.name === 'Акватория') upCost *= 0.8; // Бонус Акватории
-
-    if (type === 'build') {
-        let cost = DATA.basePrices.build * m;
-        if (state.p.or >= cost) {
-            state.p.or -= cost;
-            state.p.inc += 2;
-            addLog("Построено здание. Доход вырос.");
-        }
-    } else if (type === 'up') {
-        if (state.p.or >= upCost && state.p.ep < 4) {
-            state.p.or -= upCost;
-            state.p.ep++;
-            addLog(`🚀 ВЫ ПЕРЕШЛИ В ЭПОХУ: ${DATA.epochs[state.p.ep].name.toUpperCase()}!`, '#3fb950');
-        }
-    } else if (['inf', 'arc', 'cav'].includes(type)) {
-        let cost = DATA.basePrices[type] * m;
-        if (state.p.or >= cost) {
-            state.p.or -= cost;
-            let idx = type === 'inf' ? 0 : (type === 'arc' ? 1 : 2);
-            let power = DATA.epochs[state.p.ep].p[idx] * m;
-            state.p.mil += power;
-            addLog(`Нанят отряд: ${DATA.epochs[state.p.ep][type]} (+${power} силы)`);
-        }
-    }
-    render();
-}
-
-function launchNuke() {
-    if (state.p.or >= 10000) {
-        state.p.or -= 10000;
-        addLog("🚀 РАКЕТНЫЙ УДАР НАНЕСЕН! Экономика врагов разрушена!", "#f85149");
-        state.ai.forEach(ai => {
-            ai.inc = Math.max(1, Math.floor(ai.inc * 0.5));
-            ai.or = Math.floor(ai.or * 0.5);
-            ai.mil = Math.floor(ai.mil * 0.7);
-        });
-    }
-}
-
-function attack(idx) {
-    let target = state.ai[idx];
-    addLog(`⚔ Нападение на ${target.name}...`);
     
-    if (state.p.mil > target.mil) {
-        let loot = Math.floor(target.or * 0.6);
-        state.p.or += loot;
-        target.or -= loot;
-        target.mil = Math.floor(target.mil * 0.3);
-        addLog(`🏆 Победа! Захвачено ${loot} золота. Армия врага разбита.`, "#3fb950");
-    } else {
-        state.p.mil = Math.floor(state.p.mil * 0.2);
-        addLog(`❌ Поражение! Ваша армия уничтожена при штурме.`, "#f85149");
+    // Базовый доход 2 ОР + бонус зданий - содержание армии
+    let upkeep = Math.floor(state.p.mil * 0.1);
+    let netChange = 2 + totalIncome - upkeep;
+    state.p.or += Math.max(1, netChange);
+
+    // Логика ИИ (Упрощенная)
+    state.ai.or += 5;
+    if(state.ai.or > 200) {
+        state.ai.mil += 10;
+        state.ai.or -= 100;
     }
+
+    // Случайное событие: нападение ИИ если он в том же регионе
+    let currentReg = state.regions[state.p.loc];
+    if(state.ai.loc === state.p.loc && state.ai.mil > 0 && Math.random() > 0.9) {
+        battle(state.ai, state.p);
+    }
+
     render();
 }
 
 function render() {
-    let ep = DATA.epochs[state.p.ep];
-    let m = ep.mult;
-
-    // Тексты
-    document.getElementById('p-name').innerText = state.p.name;
-    document.getElementById('p-epoch-name').innerText = ep.name;
     document.getElementById('p-or').innerText = Math.floor(state.p.or);
-    document.getElementById('p-income').innerText = `+${state.p.inc * m}/сек`;
-    document.getElementById('p-mil').innerText = Math.floor(state.p.mil);
-    document.getElementById('p-mil-bonus').innerText = `x${m.toFixed(1)} мощь эпохи`;
+    document.getElementById('p-epoch').innerText = EPOCHS[state.p.ep];
+    document.getElementById('p-mil').innerText = state.p.mil;
+    
+    let inc = 0;
+    state.regions.forEach(r => { if(r.owner === state.p.faction) inc += r.buildings * (state.p.ep + 1) * 2; });
+    document.getElementById('p-inc').innerText = inc;
 
-    // Цены и названия
-    document.getElementById('cost-build').innerText = DATA.basePrices.build * m;
-    document.getElementById('cost-up').innerText = state.p.ep < 4 ? Math.floor(DATA.basePrices.up * Math.pow(7, state.p.ep) * (state.p.name === 'Акватория' ? 0.8 : 1)) : "МАКС";
-    document.getElementById('cost-inf').innerText = DATA.basePrices.inf * m;
-    document.getElementById('cost-arc').innerText = DATA.basePrices.arc * m;
-    document.getElementById('cost-cav').innerText = DATA.basePrices.cav * m;
+    // Отрисовка карты
+    const mapEl = document.getElementById('world-map');
+    mapEl.innerHTML = "";
+    state.regions.forEach(r => {
+        let div = document.createElement('div');
+        div.className = `region ${state.p.loc === r.id ? 'active' : ''} ${r.owner === state.ai.faction ? 'enemy' : ''}`;
+        div.onclick = () => selectRegion(r.id);
+        
+        let buildingsHtml = '<div class="buildings-grid">';
+        for(let i=0; i<r.buildings; i++) buildingsHtml += '<div class="b-icon"></div>';
+        buildingsHtml += '</div>';
 
-    document.getElementById('name-inf').innerText = ep.inf;
-    document.getElementById('name-arc').innerText = ep.arc;
-    document.getElementById('name-cav').innerText = ep.cav;
-
-    // Таймер
-    let mins = Math.floor(state.time / 60);
-    let secs = state.time % 60;
-    document.getElementById('timer').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-
-    // Ядерка
-    if (state.p.ep === 4) document.getElementById('nuke-btn').classList.remove('hidden');
-
-    // Карта
-    let totalPower = state.p.mil + state.ai[0].mil + state.ai[1].mil + 1;
-    document.getElementById('m-p').style.width = (state.p.mil / totalPower * 100) + "%";
-    document.getElementById('m-ai0').style.width = (state.ai[0].mil / totalPower * 100) + "%";
-    document.getElementById('m-ai1').style.width = (state.ai[1].mil / totalPower * 100) + "%";
-
-    // Список врагов
-    let aiHtml = "";
-    state.ai.forEach((ai, i) => {
-        aiHtml += `
-            <div class="enemy-card">
-                <div style="display:flex; justify-content:space-between">
-                    <b>${ai.name}</b>
-                    <small>${DATA.epochs[ai.ep].name}</small>
-                </div>
-                <div style="font-size:12px; margin: 5px 0;">Сила: ${Math.floor(ai.mil)} | Казна: ${Math.floor(ai.or)}</div>
-                <button class="attack-btn" onclick="attack(${i})">АТАКОВАТЬ</button>
-            </div>
+        div.innerHTML = `
+            <span class="region-name">${r.name}</span>
+            <small>${r.owner}</small>
+            ${buildingsHtml}
+            ${state.p.loc === r.id ? '<span class="unit-here">🎖️</span>' : ''}
+            ${state.ai.loc === r.id ? '<span class="unit-here" style="right:auto; left:5px;">🚜</span>' : ''}
         `;
+        mapEl.appendChild(div);
     });
-    document.getElementById('enemies-list').innerHTML = aiHtml;
+
+    // Цены
+    let m = Math.pow(4, state.p.ep);
+    document.getElementById('c-build').innerText = 50 * (state.p.ep + 1);
+    document.getElementById('c-mil').innerText = 30 * (state.p.ep + 1);
+    document.getElementById('c-up').innerText = 500 * m;
 }
 
-function addLog(msg, color = "#c9d1d9") {
-    const log = document.getElementById('log');
-    const entry = document.createElement('div');
-    entry.style.color = color;
-    entry.style.marginBottom = "5px";
-    entry.innerHTML = `<span style="color:#6e7681">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
-    log.prepend(entry);
-}
+function selectRegion(id) {
+    if (state.moving) return;
+    
+    const reg = state.regions[id];
+    document.getElementById('current-region-title').innerText = reg.name;
+    document.getElementById('region-actions').classList.remove('hidden');
 
-function resetGame() {
-    if (confirm("Вы уверены, что хотите начать заново? Весь прогресс будет удален.")) {
-        localStorage.removeItem('civ_rts_save_v1');
-        location.reload();
+    // Если мы не в этом регионе - показываем кнопку перемещения
+    if (state.p.loc !== id) {
+        document.getElementById('region-actions').innerHTML = `<button class="btn-move" onclick="moveTo(${id})">ПЕРЕБРОСИТЬ АРМИЮ (3 сек)</button>`;
+    } else {
+        // Если мы тут - стандартные действия
+        updateActionPanel(reg);
     }
 }
+
+function updateActionPanel(reg) {
+    let m = Math.pow(4, state.p.ep);
+    let html = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <p><b>Местная экономика:</b></p>
+                <button class="btn-buy" onclick="build()">Построить Ферму (${50 * (state.p.ep + 1)} ОР)</button>
+                <button class="btn-buy" onclick="upgradeEpoch()">ЭВОЛЮЦИЯ (${500 * m} ОР)</button>
+            </div>
+            <div>
+                <p><b>Местная армия:</b></p>
+                <button class="btn-buy" onclick="recruit()">Нанять отряд (${30 * (state.p.ep + 1)} ОР)</button>
+                ${reg.owner !== state.p.faction ? `<button class="btn-war" onclick="attackRegion()">❌ ЗАХВАТИТЬ РЕГИОН</button>` : `<p style="color:var(--success)">Регион под вашим контролем</p>`}
+            </div>
+        </div>
+    `;
+    document.getElementById('region-actions').innerHTML = html;
+}
+
+function moveTo(id) {
+    state.moving = true;
+    document.getElementById('move-overlay').classList.remove('hidden');
+    document.getElementById('region-actions').classList.add('hidden');
+    
+    let progress = 0;
+    let bar = document.getElementById('move-progress');
+    let interval = setInterval(() => {
+        progress += 5;
+        bar.style.width = progress + "%";
+        if(progress >= 100) {
+            clearInterval(interval);
+            state.p.loc = id;
+            state.moving = false;
+            document.getElementById('move-overlay').classList.add('hidden');
+            addLog(`Армия прибыла в регион ${state.regions[id].name}`);
+            selectRegion(id);
+            render();
+        }
+    }, 150); // 3 секунды всего
+}
+
+function build() {
+    let cost = 50 * (state.p.ep + 1);
+    let reg = state.regions[state.p.loc];
+    if(state.p.or >= cost && reg.owner === state.p.faction) {
+        state.p.or -= cost;
+        reg.buildings++;
+        addLog(`Построено здание в ${reg.name}. Доход увеличен.`);
+        render();
+    } else {
+        alert("Нельзя строить на чужой земле или недостаточно денег!");
+    }
+}
+
+function recruit() {
+    let cost = 30 * (state.p.ep + 1);
+    if(state.p.or >= cost) {
+        state.p.or -= cost;
+        state.p.mil += 10 * (state.p.ep + 1);
+        addLog(`Армия усилена.`);
+        render();
+    }
+}
+
+function upgradeEpoch() {
+    let m = Math.pow(4, state.p.ep);
+    let cost = 500 * m;
+    if(state.p.or >= cost && state.p.ep < 4) {
+        state.p.or -= cost;
+        state.p.ep++;
+        addLog(`🎉 ГЛОБАЛЬНЫЙ ПРОРЫВ: ${EPOCHS[state.p.ep]}!`, "var(--accent)");
+        render();
+    }
+}
+
+function attackRegion() {
+    let reg = state.regions[state.p.loc];
+    addLog(`Начата операция по захвату ${reg.name}...`);
+    
+    // Если есть здания врага, сначала рушим их
+    if (reg.buildings > 0) {
+        reg.buildings--;
+        state.p.mil -= 5;
+        addLog(`Разрушено вражеское здание! Наши потери: 5 силы.`);
+    } else {
+        // Если зданий нет, захватываем территорию
+        reg.owner = state.p.faction;
+        addLog(`🚩 РЕГИОН ${reg.name} ПЕРЕШЕЛ ПОД ВАШ КОНТРОЛЬ!`, "var(--success)");
+    }
+    render();
+    selectRegion(reg.id);
+}
+
+function addLog(msg, color = "white") {
+    const l = document.getElementById('log');
+    l.innerHTML = `<div style="color:${color}; margin-bottom:5px;">> ${msg}</div>` + l.innerHTML;
+}
+
+function resetGame() { localStorage.removeItem('civ_rts_save_v1'); location.reload(); }
 </script>
 
 </body>
