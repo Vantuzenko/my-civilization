@@ -3,262 +3,315 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Continent Zero: Total Strategy</title>
+    <title>Битва Гигантов: РФ против США</title>
     <style>
-        :root { --bg: #0d1117; --panel: #161b22; --accent: #58a6ff; --gold: #f2cc60; --ru: #8957e5; --us: #238636; --neutral: #30363d; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #c9d1d9; margin: 0; overflow-x: hidden; }
+        :root { --bg: #0b0e14; --panel: #161b22; --accent: #58a6ff; --gold: #f2cc60; --ru-color: #f85149; --us-color: #1f6feb; --neutral: #30363d; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: #c9d1d9; margin: 0; display: flex; flex-direction: column; align-items: center; }
         
-        .ui-top { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--panel); padding: 15px; border-bottom: 1px solid #30363d; sticky: top; }
-        .stat-box { text-align: center; }
-        .stat-box b { color: var(--gold); font-size: 1.2em; }
+        /* Экраны */
+        .screen { width: 100%; max-width: 1000px; padding: 20px; box-sizing: border-box; }
+        .hidden { display: none !important; }
 
-        /* ГРАФИЧЕСКАЯ КАРТА */
-        .map-container { position: relative; width: 100%; height: 400px; background: #010409; margin: 20px 0; border: 2px solid #30363d; border-radius: 15px; overflow: hidden; }
-        .continent-shape { position: absolute; width: 90%; height: 80%; top: 10%; left: 5%; background: #1c2128; border-radius: 50% 30% 50% 40%; filter: blur(20px); opacity: 0.3; }
+        /* Верхняя панель */
+        .stats-bar { display: flex; justify-content: space-around; background: var(--panel); padding: 15px; border-radius: 0 0 15px 15px; width: 100%; border-bottom: 2px solid var(--accent); }
+        .stat-item { text-align: center; }
+        .stat-item b { display: block; font-size: 1.4em; color: var(--gold); }
+
+        /* КАРТА */
+        .map { position: relative; width: 100%; height: 450px; background: #010409; border: 2px solid #30363d; border-radius: 20px; margin: 20px 0; overflow: hidden; border: 1px solid #444; }
+        .map-label { position: absolute; top: 10px; width: 100%; text-align: center; color: #444; font-weight: bold; pointer-events: none; }
         
-        .region { position: absolute; width: 100px; height: 80px; border-radius: 10px; border: 2px solid #f0f6fc10; cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 10px; font-weight: bold; z-index: 5; }
-        .region:hover { transform: scale(1.1); z-index: 10; }
-        .region.owned-p { background: var(--ru); border-color: white; box-shadow: 0 0 15px var(--ru); }
-        .region.owned-ai { background: #da3633; border-color: white; }
-        .region.neutral { background: var(--neutral); }
-        .region.selected { border: 3px solid var(--accent); }
-
-        /* Армия на карте */
-        #army-marker { position: absolute; width: 30px; height: 30px; background: white; border-radius: 50%; border: 3px solid var(--accent); z-index: 20; transition: all 3s linear; display: flex; align-items: center; justify-content: center; font-size: 18px; pointer-events: none; }
-
-        /* Панель управления */
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 15px 20px; }
-        .panel { background: var(--panel); border: 1px solid #30363d; border-radius: 12px; padding: 15px; }
+        .region { position: absolute; width: 110px; height: 90px; border-radius: 12px; border: 2px solid transparent; cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5; }
+        .region:hover { transform: scale(1.05); filter: brightness(1.2); }
+        .region.owned-p { border-color: white; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
+        .region.owned-ai { border-color: #ff7b72; }
+        .region.active-army { outline: 4px solid var(--gold); outline-offset: 4px; }
         
-        button { background: #21262d; color: white; border: 1px solid #30363d; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; margin: 5px 0; transition: 0.2s; }
+        .def-val { position: absolute; top: -25px; background: #000; padding: 2px 8px; border-radius: 10px; font-size: 12px; border: 1px solid gold; color: gold; font-weight: bold; }
+        .reg-name { font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
+        .reg-icons { font-size: 12px; }
+
+        /* Соединительные линии (упрощенно) */
+        .path { position: absolute; background: #21262d; z-index: 1; height: 4px; pointer-events: none; }
+
+        /* Управление */
+        .controls { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+        .panel { background: var(--panel); border-radius: 15px; padding: 20px; border: 1px solid #30363d; }
+        
+        button { background: #21262d; color: white; border: 1px solid #30363d; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; margin: 5px 0; font-weight: bold; }
         button:hover:not(:disabled) { background: #30363d; }
         button:disabled { opacity: 0.3; }
-        .btn-action { background: var(--accent); border: none; font-weight: bold; }
-        .btn-attack { background: #da3633; border: none; font-weight: bold; }
-
-        .log { background: #010409; height: 150px; overflow-y: auto; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 8px; border: 1px solid #30363d; }
-        .buildings-icons { display: flex; gap: 2px; margin-top: 5px; }
-        .b-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; }
+        .btn-move { background: var(--accent); border: none; }
+        .btn-attack { background: #da3633; border: none; }
         
-        .progress-move { position: absolute; top: 0; left: 0; height: 4px; background: var(--accent); width: 0%; transition: 3s linear; }
+        .log { background: #010409; height: 180px; overflow-y: auto; padding: 10px; font-size: 12px; border-radius: 8px; font-family: monospace; }
+        
+        /* Выбор стороны */
+        .faction-card { background: var(--panel); padding: 20px; border-radius: 15px; text-align: center; border: 2px solid #30363d; transition: 0.3s; cursor: pointer; }
+        .faction-card:hover { border-color: var(--accent); }
     </style>
 </head>
 <body>
 
-<div id="game">
-    <div class="ui-top">
-        <div class="stat-box">Эпоха<br><b id="p-epoch-name">Камень</b></div>
-        <div class="stat-box">Золото<br><b id="p-gold">0</b> <small id="p-inc">+0/с</small></div>
-        <div class="stat-box">Армия<br><b id="p-mil">0</b></div>
+<div id="setup-screen" class="screen">
+    <h1 style="text-align: center;">ВЫБЕРИТЕ СТОРОНУ КОНФЛИКТА</h1>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 50px;">
+        <div class="faction-card" onclick="startGame('RU')">
+            <h2 style="color: #f85149;">🇷🇺 РОССИЯ</h2>
+            <p>Бонус: "Крепость"<br>+25% к защите всех городов<br>Дешевые здания</p>
+        </div>
+        <div class="faction-card" onclick="startGame('US')">
+            <h2 style="color: #1f6feb;">🇺🇸 США</h2>
+            <p>Бонус: "Экспансия"<br>+30% к доходу<br>Быстрое перемещение армии</p>
+        </div>
+    </div>
+</div>
+
+<div id="game-screen" class="screen hidden">
+    <div class="stats-bar">
+        <div class="stat-item">Золото<br><b id="p-gold">0</b><small id="p-inc">+0/сек</small></div>
+        <div class="stat-item">Ваша Мощь<br><b id="p-mil">0</b></div>
+        <div class="stat-item">Эпоха<br><b id="p-epoch">Каменный век</b></div>
     </div>
 
-    <div class="map-container" id="map-area">
-        <div class="continent-shape"></div>
-        <div id="army-marker">🎖️</div>
-        <div id="progress-line" class="progress-move"></div>
-        
-        <div id="reg-0" class="region owned-p" style="top: 200px; left: 30px;" onclick="selectRegion(0)">Москва</div>
-        <div id="reg-1" class="region neutral" style="top: 120px; left: 140px;" onclick="selectRegion(1)">Сибирь</div>
-        <div id="reg-2" class="region neutral" style="top: 240px; left: 240px;" onclick="selectRegion(2)">Чукотка</div>
-        <div id="reg-3" class="region neutral" style="top: 150px; left: 360px;" onclick="selectRegion(3)">Берингия</div>
-        <div id="reg-4" class="region neutral" style="top: 50px; left: 480px;" onclick="selectRegion(4)">Аляска</div>
-        <div id="reg-5" class="region neutral" style="top: 180px; left: 600px;" onclick="selectRegion(5)">Техас</div>
-        <div id="reg-6" class="region owned-ai" style="top: 250px; left: 720px;" onclick="selectRegion(6)">Вашингтон</div>
-    </div>
+    <div class="map" id="map">
+        <div class="map-label">ЕДИНЫЙ КОНТИНЕНТ: ЕВРАЗИЯ - АМЕРИКА</div>
+        </div>
 
     <div class="controls">
         <div class="panel">
-            <h3 id="selected-name">Выберите регион</h3>
-            <div id="actions-panel" class="hidden">
-                <button id="btn-move" class="btn-action" onclick="moveArmy()">ПЕРЕЙТИ (3 сек)</button>
-                <div id="local-ops" class="hidden">
-                    <button onclick="buy('build')">Построить здание (<span id="c-build">50</span>)</button>
-                    <button onclick="buy('mil')">Нанять отряд (<span id="c-mil">30</span>)</button>
-                    <button id="btn-attack" class="btn-attack" onclick="attack()">ШТУРМ</button>
+            <h3 id="sel-name">Выберите область</h3>
+            <div id="ui-actions" class="hidden">
+                <div id="move-block" class="hidden">
+                    <button class="btn-move" onclick="moveArmy()">ПЕРЕБРОСИТЬ ВОЙСКА</button>
+                </div>
+                <div id="build-block">
+                    <button onclick="action('build')">Построить завод (<span id="c-build">50</span> ОР)</button>
+                    <button onclick="action('recruit')">Мобилизация (<span id="c-recruit">30</span> ОР)</button>
+                    <button id="btn-attack" class="btn-attack hidden" onclick="attack()">ШТУРМ ГОРОДА</button>
                 </div>
             </div>
-            <button id="btn-evolve" style="margin-top:20px; border-color:var(--gold)" onclick="buy('up')">ЭВОЛЮЦИЯ (<span id="c-up">500</span>)</button>
+            <button onclick="action('up')" style="margin-top: 15px; border-color: var(--gold);">ЭВОЛЮЦИЯ (<span id="c-up">500</span> ОР)</button>
         </div>
 
         <div class="panel">
-            <h3>Журнал событий</h3>
-            <div class="log" id="log"></div>
-            <button onclick="resetGame()" style="font-size:10px; margin-top:10px;">Сбросить всё</button>
+            <h4>Журнал командования</h4>
+            <div id="log" class="log"></div>
+            <button onclick="location.reload()" style="font-size: 10px; margin-top: 10px;">Начать заново</button>
         </div>
     </div>
 </div>
 
 <script>
-const DATA = {
-    epochs: ["Первобытность", "Античность", "Средневековье", "Индустрия", "Современность"],
-    units: ["Дубинщики", "Легионеры", "Рыцари", "Мушкетеры", "Танки"]
-};
+// Конфигурация регионов и их связей
+const REGIONS = [
+    { id: 0, name: "Москва", x: 50, y: 220, neighbors: [1], owner: 'RU', def: 50, b: 1 },
+    { id: 1, name: "Урал", x: 180, y: 150, neighbors: [0, 2], owner: 'RU', def: 20, b: 0 },
+    { id: 2, name: "Сибирь", x: 310, y: 240, neighbors: [1, 3], owner: 'neutral', def: 10, b: 0 },
+    { id: 3, name: "Чукотка", x: 440, y: 130, neighbors: [2, 4], owner: 'neutral', def: 10, b: 0 },
+    { id: 4, name: "Аляска", x: 550, y: 250, neighbors: [3, 5], owner: 'neutral', def: 10, b: 0 },
+    { id: 5, name: "Калифорния", x: 680, y: 140, neighbors: [4, 6], owner: 'US', def: 20, b: 0 },
+    { id: 6, name: "Техас", x: 810, y: 260, neighbors: [5, 7], owner: 'US', def: 20, b: 0 },
+    { id: 7, name: "Вашингтон", x: 880, y: 100, neighbors: [6], owner: 'US', def: 50, b: 1 }
+];
+
+const EPOCHS = ["Каменный век", "Античность", "Средневековье", "Индустрия", "Современность"];
 
 let state = {
-    p: { or: 100, mil: 10, ep: 0, loc: 0 },
-    ai: { or: 100, mil: 30, ep: 0, loc: 6 },
-    regions: [
-        { name: "Москва", owner: "p", b: 1, x: 30, y: 200 },
-        { name: "Сибирь", owner: "n", b: 0, x: 140, y: 120 },
-        { name: "Чукотка", owner: "n", b: 0, x: 240, y: 240 },
-        { name: "Берингия", owner: "n", b: 0, x: 360, y: 150 },
-        { name: "Аляска", owner: "n", b: 0, x: 480, y: 50 },
-        { name: "Техас", owner: "n", b: 0, x: 600, y: 180 },
-        { name: "Вашингтон", owner: "ai", b: 1, x: 720, y: 250 }
-    ],
-    selected: null,
-    isMoving: false
+    pSide: '', aiSide: '',
+    gold: 100, mil: 20, ep: 0,
+    pLoc: 0, 
+    selId: null,
+    isMoving: false,
+    regions: JSON.parse(JSON.stringify(REGIONS))
 };
 
-function init() {
-    updateArmyMarker();
+function startGame(side) {
+    state.pSide = side;
+    state.aiSide = side === 'RU' ? 'US' : 'RU';
+    state.pLoc = side === 'RU' ? 0 : 7;
+    
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
+    
+    initMap();
     setInterval(tick, 1000);
     render();
-    addLog("Игра началась. Перемещайте армию для захвата материка.");
+    addLog(`Война началась! Ваша цель — захватить столицу врага.`);
+}
+
+function initMap() {
+    const map = document.getElementById('map');
+    state.regions.forEach(r => {
+        const div = document.createElement('div');
+        div.id = `reg-${r.id}`;
+        div.className = 'region';
+        div.style.left = r.x + 'px';
+        div.style.top = r.y + 'px';
+        div.onclick = () => selectReg(r.id);
+        map.appendChild(div);
+    });
 }
 
 function tick() {
-    if(state.isMoving) return;
+    if (state.isMoving) return;
 
-    // Экономика: доход только от своих регионов
+    // ЭКОНОМИКА (Считаем все свои города)
     let income = 0;
     state.regions.forEach(r => {
-        if(r.owner === "p") income += (r.b * (state.p.ep + 1) * 3);
+        if (r.owner === state.pSide) {
+            income += (r.b + 1) * (state.ep + 1) * 3;
+        }
     });
     
-    let upkeep = Math.floor(state.p.mil * 0.1);
-    state.p.or += Math.max(1, (2 + income - upkeep));
+    if (state.pSide === 'US') income *= 1.3; // Бонус США
+    state.gold += income;
 
-    // Мини-ИИ
-    state.ai.or += 5;
-    if(state.ai.or > 150) { state.ai.mil += 10; state.ai.or -= 100; }
+    // ИИ делает ход
+    aiLogic();
+    
+    render();
+}
+
+function aiLogic() {
+    // Упрощенный ИИ: копит золото и случайно нападает на соседей
+    state.regions.forEach(r => {
+        if (r.owner === state.aiSide) {
+            r.def += 1; // Авто-прирост защиты у ИИ
+        }
+    });
+}
+
+function selectReg(id) {
+    if (state.isMoving) return;
+    state.selId = id;
+    const r = state.regions[id];
+    const current = state.regions[state.pLoc];
+    
+    document.getElementById('sel-name').innerText = r.name;
+    document.getElementById('ui-actions').classList.remove('hidden');
+    
+    // Проверка границ для перемещения
+    const isNeighbor = current.neighbors.includes(id);
+    if (isNeighbor && state.pLoc !== id) {
+        document.getElementById('move-block').classList.remove('hidden');
+    } else {
+        document.getElementById('move-block').classList.add('hidden');
+    }
+
+    // Штурм доступен если мы находимся в этом регионе и он не наш
+    if (state.pLoc === id && r.owner !== state.pSide) {
+        document.getElementById('btn-attack').classList.remove('hidden');
+    } else {
+        document.getElementById('btn-attack').classList.add('hidden');
+    }
 
     render();
 }
 
-function selectRegion(id) {
-    if(state.isMoving) return;
-    state.selected = id;
-    const reg = state.regions[id];
-    
-    document.getElementById('selected-name').innerText = reg.name + (reg.owner === "p" ? " (Ваш)" : " (Чужой)");
-    document.getElementById('actions-panel').classList.remove('hidden');
-    
-    if(state.p.loc === id) {
-        document.getElementById('btn-move').classList.add('hidden');
-        document.getElementById('local-ops').classList.remove('hidden');
-        document.getElementById('btn-attack').style.display = reg.owner === "p" ? "none" : "block";
-    } else {
-        document.getElementById('btn-move').classList.remove('hidden');
-        document.getElementById('local-ops').classList.add('hidden');
-    }
-    
-    // Подсветка
-    document.querySelectorAll('.region').forEach(r => r.classList.remove('selected'));
-    document.getElementById('reg-'+id).classList.add('selected');
-}
-
 function moveArmy() {
-    if(state.selected === null || state.isMoving) return;
-    
+    if (state.isMoving) return;
     state.isMoving = true;
-    const target = state.regions[state.selected];
+    addLog(`Армия выдвигается в ${state.regions[state.selId].name}...`);
     
-    addLog(`Армия выдвигается в ${target.name}...`);
+    let time = state.pSide === 'US' ? 2000 : 3500;
     
-    // Анимация линии прогресса
-    const bar = document.getElementById('progress-line');
-    bar.style.width = "100%";
-    
-    updateArmyMarker(target.x, target.y);
-
     setTimeout(() => {
-        state.p.loc = state.selected;
+        state.pLoc = state.selId;
         state.isMoving = false;
-        bar.style.width = "0%";
-        addLog(`Прибыли в ${target.name}`);
-        selectRegion(state.selected);
+        addLog(`Армия прибыла в ${state.regions[state.pLoc].name}`);
+        selectReg(state.pLoc);
         render();
-    }, 3000);
+    }, time);
 }
 
-function buy(type) {
-    let m = Math.pow(5, state.p.ep);
-    let reg = state.regions[state.p.loc];
+function action(type) {
+    const r = state.regions[state.selId];
+    const m = Math.pow(5, state.ep);
 
-    if(type === 'build' && state.p.or >= 50*(state.p.ep+1)) {
-        state.p.or -= 50*(state.p.ep+1);
-        reg.b++;
-        addLog(`Построено здание в ${reg.name}`);
-    } else if(type === 'mil' && state.p.or >= 30*(state.p.ep+1)) {
-        state.p.or -= 30*(state.p.ep+1);
-        state.p.mil += 10 * (state.p.ep + 1);
-        addLog(`Наняты ${DATA.units[state.p.ep]}`);
-    } else if(type === 'up' && state.p.or >= 500*m && state.p.ep < 4) {
-        state.p.or -= 500*m;
-        state.p.ep++;
-        addLog(`ЭВОЛЮЦИЯ! Мы в эпохе: ${DATA.epochs[state.p.ep]}`, "#58a6ff");
+    if (type === 'build' && r.owner === state.pSide) {
+        let cost = 50 * (state.ep + 1);
+        if (state.pSide === 'RU') cost *= 0.8;
+        if (state.gold >= cost) {
+            state.gold -= cost;
+            r.b++;
+            r.def += 20;
+            addLog(`Построено здание в ${r.name}. Оборона +20.`);
+        }
+    } else if (type === 'recruit') {
+        let cost = 30 * (state.ep + 1);
+        if (state.gold >= cost) {
+            state.gold -= cost;
+            state.mil += 15 * (state.ep + 1);
+            addLog(`Войска пополнены.`);
+        }
+    } else if (type === 'up') {
+        let cost = 500 * m;
+        if (state.gold >= cost && state.ep < 4) {
+            state.gold -= cost;
+            state.ep++;
+            addLog(`НОВАЯ ЭРА: ${EPOCHS[state.ep]}!`, "var(--gold)");
+        }
     }
     render();
 }
 
 function attack() {
-    let reg = state.regions[state.p.loc];
-    if(reg.owner === "p") return;
+    const r = state.regions[state.pLoc];
+    addLog(`Начало штурма ${r.name}...`);
+    
+    // Шанс захвата = Ваша сила / (Ваша сила + Защита города)
+    let totalDef = r.def;
+    if (r.owner === 'RU' && state.pSide === 'US') totalDef *= 1.25; // Защитный бонус РФ
 
-    addLog(`Штурм региона ${reg.name}...`);
-    if(reg.b > 0) {
-        reg.b--;
-        state.p.mil -= 5;
-        addLog(`Разрушено здание врага! Потери: 5 силы.`);
+    let winChance = state.mil / (state.mil + totalDef);
+    
+    if (Math.random() < winChance) {
+        r.owner = state.pSide;
+        r.def = Math.floor(state.mil * 0.5);
+        state.mil = Math.floor(state.mil * 0.7);
+        addLog(`🏆 ПОБЕДА! Город ${r.name} захвачен.`, "#3fb950");
     } else {
-        reg.owner = "p";
-        addLog(`🚩 РЕГИОН ${reg.name} ЗАХВАЧЕН!`, "#238636");
+        state.mil = Math.floor(state.mil * 0.3);
+        addLog(`❌ ОТСТУПЛЕНИЕ! Мы понесли тяжелые потери.`, "#f85149");
     }
     render();
-    selectRegion(state.p.loc);
-}
-
-function updateArmyMarker(x, y) {
-    const marker = document.getElementById('army-marker');
-    if(!x) {
-        x = state.regions[state.p.loc].x;
-        y = state.regions[state.p.loc].y;
-    }
-    marker.style.left = (x + 35) + "px";
-    marker.style.top = (y + 25) + "px";
 }
 
 function render() {
-    document.getElementById('p-gold').innerText = Math.floor(state.p.or);
-    document.getElementById('p-mil').innerText = state.p.mil;
-    document.getElementById('p-epoch-name').innerText = DATA.epochs[state.p.ep];
-    
-    // Цены
-    let m = Math.pow(5, state.p.ep);
-    document.getElementById('c-build').innerText = 50*(state.p.ep+1);
-    document.getElementById('c-mil').innerText = 30*(state.p.ep+1);
-    document.getElementById('c-up').innerText = 500*m;
+    document.getElementById('p-gold').innerText = Math.floor(state.gold);
+    document.getElementById('p-inc').innerText = `+${Math.floor(calcInc())}/сек`;
+    document.getElementById('p-mil').innerText = state.mil;
+    document.getElementById('p-epoch').innerText = EPOCHS[state.ep];
 
-    // Обновление классов регионов
-    state.regions.forEach((r, i) => {
-        const el = document.getElementById('reg-'+i);
-        el.className = `region ${r.owner === 'p' ? 'owned-p' : (r.owner === 'ai' ? 'owned-ai' : 'neutral')} ${state.selected === i ? 'selected' : ''}`;
+    state.regions.forEach(r => {
+        const el = document.getElementById(`reg-${r.id}`);
+        const isP = r.owner === state.pSide;
+        const isAI = r.owner === state.aiSide;
         
-        let bDots = '<div class="buildings-icons">';
-        for(let j=0; j<r.b; j++) bDots += '<div class="b-icon"></div>'; // Иконки зданий в коде выше CSS .b-icon исправлен на .b-dot
-        el.innerHTML = `${r.name}<div class="buildings-icons">${"●".repeat(r.b)}</div>`;
+        el.className = `region ${isP ? 'owned-p' : (isAI ? 'owned-ai' : 'neutral')} ${state.pLoc === r.id ? 'active-army' : ''} ${state.selId === r.id ? 'selected' : ''}`;
+        el.style.backgroundColor = isP ? (state.pSide === 'RU' ? 'var(--ru-color)' : 'var(--us-color)') : 
+                                   isAI ? (state.aiSide === 'RU' ? 'var(--ru-color)' : 'var(--us-color)') : 'var(--neutral)';
+        
+        el.innerHTML = `
+            <div class="def-val">${Math.floor(r.def)}</div>
+            <div class="reg-name">${r.name}</div>
+            <div class="reg-icons">${"🏭".repeat(Math.min(r.b, 5))}</div>
+            ${state.pLoc === r.id ? '<div style="font-size:20px">🎖️</div>' : ''}
+        `;
     });
+}
+
+function calcInc() {
+    let inc = 0;
+    state.regions.forEach(r => { if(r.owner === state.pSide) inc += (r.b + 1) * (state.ep + 1) * 3; });
+    return state.pSide === 'US' ? inc * 1.3 : inc;
 }
 
 function addLog(msg, color = "#c9d1d9") {
     const log = document.getElementById('log');
-    log.innerHTML = `<div style="color:${color}">> ${msg}</div>` + log.innerHTML;
+    log.innerHTML = `<div style="color:${color}; border-bottom:1px solid #21262d; padding:2px;">> ${msg}</div>` + log.innerHTML;
 }
-
-function resetGame() { localStorage.clear(); location.reload(); }
-
-window.onload = init;
 </script>
 </body>
 </html>
